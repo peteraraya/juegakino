@@ -1,9 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
   evaluateKinoTips,
-  generateCartonWithKinoTips,
+  matchesIdealKinoTips,
   kinoTipsMetrics,
 } from "@/domain/kinoTips";
+import { iterateAllKinoCartons } from "@/domain/generation";
 import type { KinoTipCondition } from "@/domain/kinoTips";
 
 // Ejemplo de cartilla ganadora del artículo: suma 174.
@@ -44,40 +45,27 @@ describe("evaluateKinoTips", () => {
   });
 });
 
-describe("generateCartonWithKinoTips", () => {
-  it("genera cartón de 14 que cumple todas las condiciones activas", () => {
-    const { carton, summary } = generateCartonWithKinoTips(42, ALL, 50_000);
-    expect(carton).not.toBeNull();
-    expect(carton).toHaveLength(14);
-    expect(new Set(carton).size).toBe(14);
-    expect(carton).toContain(1);
-    expect(carton).toContain(25);
-    // Todas las condiciones deben quedar en al menos "aceptable".
-    expect(summary.fuera).toBe(0);
-    // Mínimamente 4 de las 7 en ideal (fijos, separación, racha, suma, pares, primos, 1 dígito).
-    expect(summary.ideal).toBeGreaterThanOrEqual(3);
+describe("búsqueda de cartones ideales", () => {
+  it("rechaza un cartón aceptable que no alcanza el rango ideal", () => {
+    expect(matchesIdealKinoTips(GANADORA, ["suma"])).toBe(false);
+    expect(matchesIdealKinoTips(GANADORA, ["primos"])).toBe(false);
   });
 
-  it("con solo fijos genera cartones con 1 y 25", () => {
-    for (const seed of [1, 7, 99]) {
-      const { carton } = generateCartonWithKinoTips(seed, ["fijos"] as KinoTipCondition[], 1_000);
-      expect(carton).toContain(1);
-      expect(carton).toContain(25);
-      expect(carton).toHaveLength(14);
+  it("itera combinaciones válidas sin saltos en el inicio", () => {
+    const records = iterateAllKinoCartons();
+    expect(records.next().value).toEqual(Array.from({ length: 14 }, (_, index) => index + 1));
+    expect(records.next().value).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 15]);
+  });
+
+  it("encuentra un cartón donde todas las condiciones están en ideal", () => {
+    let candidate: number[] | undefined;
+    for (const record of iterateAllKinoCartons()) {
+      if (matchesIdealKinoTips(record, ALL)) {
+        candidate = record;
+        break;
+      }
     }
-  });
-
-  it("fijos exige separación máxima 3-4 (dentro del rango del tip)", () => {
-    const { carton } = generateCartonWithKinoTips(5, ["separacion"] as KinoTipCondition[], 50_000);
-    const m = kinoTipsMetrics(carton!);
-    expect(m.maxSeparacion).toBeGreaterThanOrEqual(2);
-    expect(m.maxSeparacion).toBeLessThanOrEqual(5);
-  });
-
-  it("fijos limita la racha consecutiva a 3-5", () => {
-    const { carton } = generateCartonWithKinoTips(5, ["consecutivos"] as KinoTipCondition[], 50_000);
-    const m = kinoTipsMetrics(carton!);
-    expect(m.maxConsecutivos).toBeGreaterThanOrEqual(3);
-    expect(m.maxConsecutivos).toBeLessThanOrEqual(5);
+    expect(candidate).toBeDefined();
+    expect(matchesIdealKinoTips(candidate!, ALL)).toBe(true);
   });
 });

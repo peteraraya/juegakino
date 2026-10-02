@@ -19,6 +19,11 @@ export default defineConfig({
       "**/dist/**",
       "**/e2e/**",
       "**/*.e2e.spec.*",
+      // Copias de trabajo de tooling que viven dentro del repo: sin esto sus tests
+      // corren duplicados (152 en vez de 76) y cualquier falla aparece dos veces.
+      "**/.kilo/**",
+      "**/.claude/**",
+      "**/.opencode/**",
     ],
   },
   build: {

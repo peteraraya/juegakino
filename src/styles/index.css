@@ -2,27 +2,155 @@
 @tailwind components;
 @tailwind utilities;
 
+/*
+ * Tokens — Implementación de /context/design-tokens.md.
+ * Se declaran como variables CSS (no hex directo en Tailwind) para que el dark mode
+ * sea una cascada de CSS y no requiera JS ni un toggle. Cada valor tiene su par light/dark.
+ */
 @layer base {
   :root {
     color-scheme: light;
-    @apply bg-gray-50 text-gray-900 antialiased;
+
+    --paper: 250 249 247; /* #FAF9F7 */
+    --surface: 255 255 255; /* #FFFFFF */
+    --surface-sunken: 245 245 244; /* #F5F5F4 */
+
+    --ink-900: 28 25 23; /* #1C1917 · 16.62:1 */
+    --ink-800: 41 37 36; /* #292524 · 14.42:1 */
+    --ink-700: 68 64 60; /* #44403C · 9.76:1 */
+    --ink-600: 87 83 78; /* #57534E · 7.25:1 */
+    --ink-500: 121 113 108; /* #79716C · 4.54:1 — solo sobre paper/surface */
+
+    --line: 231 229 228; /* #E7E5E4 decorativo */
+    --line-strong: 214 211 209; /* #D6D3D1 decorativo */
+    --line-control: 121 113 108; /* #79716C · 4.78:1 — único borde con significado */
+
+    --accent-fill: 228 0 43; /* #E4002B · blanco encima 4.85:1 */
+    --accent-fill-hover: 192 0 37; /* #C00025 · blanco encima 6.43:1 */
+    --accent-text: 192 0 37; /* #C00025 · 6.11:1 sobre paper */
+    --accent-text-strong: 158 0 31; /* #9E001F · 7.77:1 sobre accent-tint */
+    --accent-tint: 254 242 243; /* #FEF2F3 */
+    --accent-line: 251 196 202; /* #FBC4CA decorativo */
+
+    --success: 21 128 61; /* #15803D · 4.77:1 */
+    --success-tint: 240 253 244; /* #F0FDF4 */
+    --success-ink: 22 101 52; /* #166534 · 6.81:1 sobre tint */
+    --warning: 180 83 9; /* #B45309 · 4.77:1 */
+    --warning-tint: 255 251 235; /* #FFFBEB */
+    --warning-ink: 146 64 14; /* #92400E · 6.84:1 sobre tint */
+    --danger: 185 28 28; /* #B91C1C · 6.15:1 */
+    --danger-tint: 254 242 242; /* #FEF2F2 */
+    --danger-ink: 153 27 27; /* #991B1B · 7.60:1 sobre tint */
+    --info: 29 78 216; /* #1D4ED8 · 6.37:1 */
+    --info-tint: 239 246 255; /* #EFF6FF */
+    --info-ink: 30 64 175; /* #1E40AF · 8.01:1 sobre tint */
+
+    /* Institucionales: sin variante dark, son un par propio. */
+    --navy-800: 10 25 41; /* #0A1929 */
+    --navy-900: 7 20 32; /* #071420 · blanco encima 18.58:1 */
+    --gold-300: 233 196 106; /* #E9C46A · 11.82:1 sobre navy-900 */
+    --gold-400: 212 175 55; /* #D4AF37 · 8.84:1 sobre navy-900 */
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      color-scheme: dark;
+
+      --paper: 12 10 9; /* #0C0A09 */
+      --surface: 28 25 23; /* #1C1917 */
+      --surface-sunken: 35 31 30; /* #231F1E */
+
+      --ink-900: 250 250 249; /* #FAFAF9 · 18.92:1 */
+      --ink-800: 237 234 232; /* #EDEAE8 · 16.50:1 */
+      --ink-700: 214 210 207; /* #D6D2CF · 13.15:1 */
+      --ink-600: 168 162 158; /* #A8A29E · 7.83:1 */
+      --ink-500: 143 138 133; /* #8F8A85 · 5.78:1 */
+
+      --line: 44 40 39; /* #2C2827 decorativo */
+      --line-strong: 58 54 52; /* #3A3634 decorativo */
+      --line-control: 110 104 101; /* #6E6865 · 3.60:1 */
+
+      /* El acento de TEXTO cambia en dark: #E4002B no alcanza sobre fondo oscuro.
+         El RELLENO sigue siendo #E4002B — mismo rojo de marca, ajustado por función. */
+      --accent-text: 247 154 165; /* #F79AA5 · 9.52:1 */
+      --accent-text-strong: 251 196 202; /* #FBC4CA */
+      --accent-tint: 42 20 24; /* #2A1418 */
+      --accent-line: 110 32 41; /* #6E2029 */
+
+      --success: 74 222 128; /* #4ADE80 · 11.34:1 */
+      --success-tint: 18 42 23; /* #122A17 */
+      --success-ink: 134 239 172; /* #86EFAC */
+      --warning: 251 191 36; /* #FBBF24 · 11.83:1 */
+      --warning-tint: 46 36 16; /* #2E2410 */
+      --warning-ink: 253 230 138; /* #FDE68A */
+      --danger: 248 113 113; /* #F87171 · 7.14:1 */
+      --danger-tint: 51 22 22; /* #331616 */
+      --danger-ink: 252 165 165; /* #FCA5A5 */
+      --info: 96 165 250; /* #60A5FA · 7.77:1 */
+      --info-tint: 18 32 63; /* #12203F */
+      --info-ink: 147 197 253; /* #93C5FD */
+    }
+  }
+
+  /*
+   * Fallback de fuentes mientras descarga Newsreader (display=swap).
+   * size-adjust alinea las métricas de Georgia/Consolas con las de la fuente real para
+   * que el swap no provoque layout shift. Ver design-tokens.md §12.
+   */
+  @font-face {
+    font-family: "Newsreader Fallback";
+    src: local("Georgia"), local("Times New Roman");
+    size-adjust: 101%;
+    ascent-override: 92%;
+    descent-override: 24%;
+  }
+
+  html {
+    @apply bg-paper text-ink-900 antialiased;
   }
 
   body {
-    @apply min-h-screen bg-gray-50;
+    @apply min-h-screen bg-paper font-sans text-body text-ink-700;
+  }
+
+  /* Foco global visible y consistente: 6.11:1 sobre paper. Nunca outline:none suelto. */
+  :focus-visible {
+    @apply outline-none ring-2 ring-accent-text ring-offset-2 ring-offset-paper;
+  }
+
+  /* Las cifras de datos van siempre en mono con ancho de dígito estable. */
+  .tabular {
+    font-variant-numeric: tabular-nums;
+  }
+
+  ::selection {
+    @apply bg-accent-tint text-accent-text-strong;
+  }
+
+  /* Todo el movimiento del sistema respeta la preferencia del sistema operativo. */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
   }
 }
 
 @layer components {
-  .btn-primary {
-    @apply inline-flex items-center justify-center gap-2 rounded-lg bg-kino-red-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-kino-red-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-kino-red-600 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50;
+  /*
+   * Superficie base del producto. Sin sombra: la separación la hace el borde de un pelo
+   * (surface sobre paper da solo 1.05:1 — el contraste de fondo NO separa nada).
+   */
+  .surface-card {
+    @apply rounded-lg border border-line bg-surface;
   }
 
-  .btn-secondary {
-    @apply inline-flex items-center justify-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 transition-colors hover:bg-gray-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-kino-red-600 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50;
-  }
-
-  .card {
-    @apply rounded-lg border border-gray-200 bg-white shadow-sm;
+  /* Foco de anillo para superficies que no usan :focus-visible global (celdas, bolillas). */
+  .focus-ring {
+    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-text focus-visible:ring-offset-2 focus-visible:ring-offset-paper;
   }
 }

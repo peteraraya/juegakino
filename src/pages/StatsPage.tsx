@@ -11,6 +11,11 @@ import {
   YAxis,
 } from "recharts";
 import { InfoTip } from "@/components/ui/InfoTip";
+import { PageHeader } from "@/components/ui/PageHeader";
+import { Card, CardTitle } from "@/components/ui/Card";
+import { DataTable, Td, Th, Tr } from "@/components/ui/DataTable";
+import { Note } from "@/components/ui/Field";
+import { axisProps, tooltipStyle, useChartTheme } from "@/lib/chartTheme";
 import { EXPECTED_MATCHES, MIN_PRIZE_MATCHES, probabilityAtLeast, probabilityTable } from "@/domain";
 import { useKinoStore } from "@/stores/kinoStore";
 
@@ -29,6 +34,7 @@ function formatOneIn(probability: number): string {
 
 export function StatsPage() {
   const lastResult = useKinoStore((s) => s.lastResult);
+  const theme = useChartTheme();
 
   const data = useMemo(() => {
     const theoretical = probabilityTable();
@@ -50,123 +56,169 @@ export function StatsPage() {
     : null;
 
   return (
-    <div className="space-y-6">
-      <header>
-        <h1 className="font-display text-3xl font-bold text-gray-900">Estadísticas</h1>
-        <p className="mt-1 text-sm text-gray-600">
-          Distribución hipergeométrica teórica de aciertos por cartón (14 de 25). Si corres una simulación en{" "}
-          <em>Simulador</em>, sus frecuencias observadas se superponen aquí y se acercan al teórico al aumentar los
-          sorteos. Valor esperado: <strong className="font-mono">{EXPECTED_MATCHES}</strong> aciertos.
-        </p>
-      </header>
+    <div className="space-y-8">
+      <PageHeader
+        eyebrow="Simular"
+        title="Estadísticas"
+        description={
+          <>
+            Distribución hipergeométrica teórica de aciertos por cartón (14 de 25). Si corres una simulación en{" "}
+            <em>Simulador</em>, sus frecuencias observadas se superponen aquí y se acercan al teórico al aumentar los
+            sorteos. Valor esperado:{" "}
+            <strong className="tabular font-mono text-ink-900">{EXPECTED_MATCHES}</strong> aciertos.
+          </>
+        }
+      />
 
-      <section className="card p-6">
-        <h2 className="mb-4 font-display text-lg font-semibold text-gray-900">P(K = k aciertos), en %</h2>
-        <div className="h-72 w-full">
+      <Card>
+        <CardTitle>P(K = k aciertos), en %</CardTitle>
+
+        <div className="mt-5 h-72 w-full">
           <ResponsiveContainer>
-            <BarChart data={data} margin={{ top: 8, right: 8, bottom: 0, left: 8 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-              <XAxis dataKey="aciertos" tick={{ fontSize: 12 }} />
-              <YAxis tick={{ fontSize: 12 }} />
-              <Tooltip formatter={(value) => `${Number(value).toFixed(4)} %`} labelFormatter={(label) => `${String(label)} aciertos`} />
-              <Legend />
-              <Bar dataKey="teorico" name="Teórico" radius={[4, 4, 0, 0]}>
+            <BarChart data={data} margin={{ top: 8, right: 8, bottom: 0, left: 0 }}>
+              {/* Grilla horizontal decorativa: sin punteado, porque punteado lee como serie. */}
+              <CartesianGrid stroke={theme.grid} vertical={false} />
+              <XAxis dataKey="aciertos" {...axisProps(theme)} />
+              <YAxis {...axisProps(theme)} width={56} />
+              <Tooltip
+                {...tooltipStyle(theme)}
+                formatter={(value) => `${Number(value).toFixed(4)} %`}
+                labelFormatter={(label) => `${String(label)} aciertos`}
+                cursor={{ fill: theme.grid }}
+              />
+              <Legend wrapperStyle={{ fontSize: 12, color: theme.axis, paddingTop: 8 }} />
+              <Bar dataKey="teorico" name="Teórico" radius={[3, 3, 0, 0]}>
                 {data.map((entry) => (
                   <Cell
                     key={entry.aciertos}
-                    fill={entry.aciertos >= MIN_PRIZE_MATCHES ? "#E4002B" : entry.aciertos >= EXPECTED_MATCHES ? "#F79AA5" : "#9ca3af"}
+                    fill={
+                      entry.aciertos >= MIN_PRIZE_MATCHES
+                        ? theme.series
+                        : entry.aciertos >= EXPECTED_MATCHES
+                          ? theme.axis
+                          : theme.grid
+                    }
                   />
                 ))}
               </Bar>
               {hasHistogram && lastResult && (
-                <Bar dataKey="observado" name={`Observado (${lastResult.draws.toLocaleString("es-CL")} sorteos)`} fill="#1f2937" radius={[4, 4, 0, 0]} />
+                <Bar
+                  dataKey="observado"
+                  name={`Observado (${lastResult.draws.toLocaleString("es-CL")} sorteos)`}
+                  fill={theme.seriesNeutral}
+                  radius={[3, 3, 0, 0]}
+                />
               )}
             </BarChart>
           </ResponsiveContainer>
         </div>
-        <p className="mt-2 text-xs text-gray-500">
-          En rojo, categorías de premio (10–14 aciertos). Las barras oscuras son la simulación observada; al correr más
-          sorteos se alinean con el teórico (ley de los grandes números).
+
+        {/*
+          La categoría de premio se codifica por color en el chart, así que el color NO
+          puede ser el único portador: el marcador de eje lo repite en texto
+          ("Premio desde 10") y la tabla de abajo lo dice con "Sí"/"—".
+        */}
+        <p className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-small text-ink-600">
+          <span className="flex items-center gap-1.5">
+            <span
+              aria-hidden="true"
+              className="inline-block h-2.5 w-2.5 rounded-sm"
+              style={{ background: theme.series }}
+            />
+            Premio desde {MIN_PRIZE_MATCHES} aciertos
+          </span>
+          <span>Las barras oscuras son la simulación observada: al correr más sorteos se alinean con el teórico.</span>
         </p>
+
         {hasHistogram && observedPrizePct !== null && (
-          <div className="mt-3 flex flex-wrap gap-3 rounded-lg bg-gray-50 p-3 text-sm">
+          <div className="mt-4 flex flex-wrap gap-x-8 gap-y-2 rounded-md bg-surface-sunken p-4 text-small">
             <p>
-              <span className="text-gray-500">Premios observados reales:</span>{" "}
-              <strong className="font-mono text-emerald-700">{observedPrizePct.toFixed(3)} %</strong>
+              <span className="text-ink-600">Premios observados reales:</span>{" "}
+              <strong className="tabular font-mono font-medium text-success">{observedPrizePct.toFixed(3)} %</strong>
             </p>
             <p>
-              <span className="text-gray-500">Premios teóricos:</span>{" "}
-              <strong className="font-mono text-kino-red-700">{(probabilityAtLeast(MIN_PRIZE_MATCHES) * 100).toFixed(3)} %</strong>
+              <span className="text-ink-600">Premios teóricos:</span>{" "}
+              <strong className="tabular font-mono font-medium text-accent-text">
+                {(probabilityAtLeast(MIN_PRIZE_MATCHES) * 100).toFixed(3)} %
+              </strong>
             </p>
           </div>
         )}
-      </section>
+      </Card>
 
-      <section className="card p-6">
-        <h2 className="mb-3 font-display text-lg font-semibold text-gray-900">Tabla de probabilidades</h2>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-gray-200 text-left text-xs uppercase tracking-wide text-gray-500">
-                <th className="py-2 pr-4">Aciertos</th>
-                <th className="py-2 pr-4">Probabilidad</th>
-                <th className="py-2 pr-4">1 en N</th>
-                <th className="py-2">Premio</th>
-              </tr>
-            </thead>
-            <tbody className="font-mono">
-              {data.map((row) => (
-                <tr key={row.aciertos} className="border-b border-gray-100">
-                  <td className="py-2 pr-4 font-semibold">{row.aciertos}</td>
-                  <td className="py-2 pr-4">{formatPercent(row.teorico)}</td>
-                  <td className="py-2 pr-4">{formatOneIn(row.probabilidad)}</td>
-                  <td className="py-2">{row.aciertos >= MIN_PRIZE_MATCHES ? <span className="font-bold text-kino-red-600">Sí</span> : "—"}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </section>
+      <Card>
+        <CardTitle>Probabilidad por categoría</CardTitle>
+        <DataTable className="mt-4">
+          <thead>
+            <tr>
+              <Th numeric>Aciertos</Th>
+              <Th numeric>Probabilidad</Th>
+              <Th numeric>1 en N</Th>
+              <Th>Premio</Th>
+            </tr>
+          </thead>
+          <tbody>
+            {data.map((row) => (
+              <Tr key={row.aciertos}>
+                <Td numeric className="font-semibold">
+                  {row.aciertos}
+                </Td>
+                <Td numeric>{formatPercent(row.teorico)}</Td>
+                <Td numeric>{formatOneIn(row.probabilidad)}</Td>
+                <Td mono={false}>
+                  {row.aciertos >= MIN_PRIZE_MATCHES ? (
+                    <span className="font-medium text-accent-text-strong">Sí</span>
+                  ) : (
+                    <span className="text-ink-500">—</span>
+                  )}
+                </Td>
+              </Tr>
+            ))}
+          </tbody>
+        </DataTable>
+      </Card>
 
-      <section className="card p-6">
-        <h2 className="mb-3 font-display text-lg font-semibold text-gray-900">
+      <Card>
+        <CardTitle>
           Categorías de premio
           <InfoTip label="Premios reales">
             El Kino reparte su pozo según aciertos (10–14). Estos valores son referenciales y los fija Lotería en cada
             sorteo: un monto fijo no está garantizado por esta app.
           </InfoTip>
-        </h2>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-gray-200 text-left text-xs uppercase tracking-wide text-gray-500">
-                <th className="py-2 pr-4">Aciertos</th>
-                <th className="py-2 pr-4">Probabilidad</th>
-                <th className="py-2 pr-4">1 en N</th>
-                <th className="py-2 pr-4">Categoría</th>
-                <th className="py-2">Referencia de premio</th>
-              </tr>
-            </thead>
-            <tbody className="font-mono">
-              {data
-                .filter((row) => row.aciertos >= MIN_PRIZE_MATCHES)
-                .map((row) => (
-                  <tr key={row.aciertos} className="border-b border-gray-100">
-                    <td className="py-2 pr-4 font-semibold">{row.aciertos}</td>
-                    <td className="py-2 pr-4">{formatPercent(row.teorico)}</td>
-                    <td className="py-2 pr-4">1 en {formatOneIn(row.probabilidad)}</td>
-                    <td className="py-2 pr-4">{row.aciertos === 14 ? "Kino" : `Categoría ${15 - row.aciertos}`}</td>
-                    <td className="py-2">{prizeReference(row.aciertos)}</td>
-                  </tr>
-                ))}
-            </tbody>
-          </table>
-        </div>
-        <p className="mt-2 text-xs text-gray-500">
-          Jugando 14 números tu boleto cuesta lo que fije Lotería de Concepción; el pozo y el monto por categoría varían
-          en cada sorteo según la recaudación.
-        </p>
-      </section>
+        </CardTitle>
+
+        <DataTable className="mt-4">
+          <thead>
+            <tr>
+              <Th numeric>Aciertos</Th>
+              <Th numeric>Probabilidad</Th>
+              <Th numeric>1 en N</Th>
+              <Th>Categoría</Th>
+              <Th>Referencia de premio</Th>
+            </tr>
+          </thead>
+          <tbody>
+            {data
+              .filter((row) => row.aciertos >= MIN_PRIZE_MATCHES)
+              .map((row) => (
+                <Tr key={row.aciertos}>
+                  <Td numeric className="font-semibold">
+                    {row.aciertos}
+                  </Td>
+                  <Td numeric>{formatPercent(row.teorico)}</Td>
+                  <Td numeric>1 en {formatOneIn(row.probabilidad)}</Td>
+                  <Td mono={false}>{row.aciertos === 14 ? "Kino" : `Categoría ${15 - row.aciertos}`}</Td>
+                  <Td mono={false}>{prizeReference(row.aciertos)}</Td>
+                </Tr>
+              ))}
+          </tbody>
+        </DataTable>
+
+        <Note tone="info" className="mt-4">
+          Jugando 14 números tu boleto cuesta lo que fije Lotería de Concepción; el pozo y el monto por categoría
+          varían en cada sorteo según la recaudación.
+        </Note>
+      </Card>
     </div>
   );
 }

@@ -1,6 +1,3 @@
-import { PICK_SIZE } from "./probabilities";
-import { createPrng } from "./prng";
-
 /**
  * Filtros de estilo basados en análisis combinatorio empírico del Kino.
  *
@@ -185,68 +182,11 @@ export function evaluateKinoTips(carton: number[], active: KinoTipCondition[]): 
   return results;
 }
 
-export interface KinoTipsFilterResult {
-  carton: number[] | null;
-  attempts: number;
-  /** Cuántas condiciones activas quedaron en cada nivel en el cartón final. */
-  summary: { ideal: number; aceptable: number; fuera: number };
-}
-
-/**
- * Genera un cartón que cumpla las condiciones activas, por muestreo
- * aleatorio con semilla (determinista por semilla). Los fijos restringen el
- * espacio; las demás se aceptan si están en nivel "aceptable" o "ideal".
- */
-export function generateCartonWithKinoTips(
-  seed: number,
-  active: KinoTipCondition[],
-  maxAttempts: number = 200_000,
-): KinoTipsFilterResult {
-  const fixed: number[] = [];
-  if (active.includes("fijos")) fixed.push(1, 25);
-
-  const rand = createPrng(seed);
-  const remainingPoolBase = Array.from({ length: 25 }, (_, i) => i + 1).filter((n) => !fixed.includes(n));
-
-  let best: number[] | null = null;
-  let bestScore = -1;
-
-  for (let attempt = 0; attempt < maxAttempts; attempt++) {
-    // Fisher-Yates determinista sobre los números restantes.
-    const pool = [...remainingPoolBase];
-    for (let i = pool.length - 1; i > 0; i--) {
-      const j = Math.floor(rand() * (i + 1));
-      [pool[i], pool[j]] = [pool[j], pool[i]];
-    }
-    const carton = [...fixed, ...pool.slice(0, PICK_SIZE - fixed.length)].sort((a, b) => a - b);
-    const results = evaluateKinoTips(carton, active);
-    if (results.length === 0) return { carton, attempts: attempt + 1, summary: { ideal: 0, aceptable: 0, fuera: 0 } };
-
-    const ideal = results.filter((r) => r.status === "ideal").length;
-    const aceptable = results.filter((r) => r.status === "aceptable").length;
-    const score = ideal + aceptable;
-    if (score > bestScore) {
-      bestScore = score;
-      best = carton;
-    }
-    if (score === results.length) {
-      // Todas cumplen: devuelve el mejor hasta ahora (primera con score total).
-      const summary = { ideal, aceptable, fuera: 0 };
-      return { carton, attempts: attempt + 1, summary };
-    }
-  }
-
-  if (best) {
-    const results = evaluateKinoTips(best, active);
-    const ideal = results.filter((r) => r.status === "ideal").length;
-    const aceptable = results.filter((r) => r.status === "aceptable").length;
-    return {
-      carton: best,
-      attempts: maxAttempts,
-      summary: { ideal, aceptable, fuera: results.length - ideal - aceptable },
-    };
-  }
-  return { carton: null, attempts: maxAttempts, summary: { ideal: 0, aceptable: 0, fuera: 0 } };
+/** Solo acepta cartones donde todas las condiciones activas están en nivel ideal. */
+export function matchesIdealKinoTips(carton: number[], active: KinoTipCondition[]): boolean {
+  if (active.length === 0) return false;
+  const results = evaluateKinoTips(carton, active);
+  return results.length === active.length && results.every((result) => result.status === "ideal");
 }
 
 /** Total de condiciones activas (para contadores). */

@@ -3,6 +3,24 @@ import { KINO_SIZE, PICK_SIZE } from "./probabilities";
 import type { GenerationStrategy } from "./schemas";
 import { drawNumbers } from "./simulation";
 
+/** Recorre el espacio completo de cartones sin materializarlo en memoria. */
+export function* iterateAllKinoCartons(): Generator<number[]> {
+  const carton = Array.from({ length: PICK_SIZE }, (_, index) => index + 1);
+
+  while (true) {
+    yield [...carton];
+
+    let index = PICK_SIZE - 1;
+    while (index >= 0 && carton[index] === KINO_SIZE - PICK_SIZE + index + 1) index--;
+    if (index < 0) return;
+
+    carton[index]++;
+    for (let next = index + 1; next < PICK_SIZE; next++) {
+      carton[next] = carton[next - 1] + 1;
+    }
+  }
+}
+
 /**
  * Generación de cartones por estrategia.
  *

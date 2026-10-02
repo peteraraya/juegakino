@@ -1,12 +1,11 @@
 import { useMemo, useState } from "react";
 import { InfoTip } from "@/components/ui/InfoTip";
-import {
-  KINO_TIP_DEFS,
-  countActive,
-  evaluateKinoTips,
-  generateCarton,
-  kinoStyleScore,
-} from "@/domain";
+import { PageHeader } from "@/components/ui/PageHeader";
+import { Button } from "@/components/ui/Button";
+import { Card, CardTitle } from "@/components/ui/Card";
+import { CheckboxRow, Field, TextInput } from "@/components/ui/Field";
+import { DataTable, StatusCell, Td, Th, Tr } from "@/components/ui/DataTable";
+import { KINO_TIP_DEFS, countActive, evaluateKinoTips, generateCarton, kinoStyleScore } from "@/domain";
 import type { KinoTipCondition } from "@/domain";
 import { useKinoStore } from "@/stores/kinoStore";
 import { useUiStore } from "@/stores/uiStore";
@@ -17,7 +16,14 @@ export function ComparadorPage() {
   const setCarton = useKinoStore((s) => s.setCarton);
   const pushToast = useUiStore((s) => s.pushToast);
 
-  const [active, setActive] = useState<KinoTipCondition[]>(["suma", "pares", "primos", "unDigito", "separacion", "consecutivos"]);
+  const [active, setActive] = useState<KinoTipCondition[]>([
+    "suma",
+    "pares",
+    "primos",
+    "unDigito",
+    "separacion",
+    "consecutivos",
+  ]);
   const [count, setCount] = useState(DEFAULT_COUNT);
   const [runId, setRunId] = useState(1);
 
@@ -40,152 +46,157 @@ export function ComparadorPage() {
   const best = candidates.top[0];
 
   return (
-    <div className="space-y-6">
-      <header>
-        <h1 className="font-display text-3xl font-bold text-gray-900">Comparador de cartones</h1>
-        <p className="mt-1 text-sm text-gray-600">
-          Genera N cartones al azar, los ordena por <strong>score de estilo</strong> (qué tan bien cumplen los tips de
-          cartillas ganadoras) y muestra los mejores. El score <em>describe el estilo</em>, no aumenta tu probabilidad:
-          todas las combinaciones de 14 son equiprobables.
-        </p>
-      </header>
+    <div className="space-y-8">
+      <PageHeader
+        eyebrow="Explorar"
+        title="Comparador de cartones"
+        description={
+          <>
+            Genera N cartones al azar, los ordena por <strong className="font-medium text-ink-900">score de
+            estilo</strong> (qué tan bien cumplen los tips de cartillas ganadoras) y muestra los mejores. El score{" "}
+            <em>describe el estilo</em>, no aumenta tu probabilidad: todas las combinaciones de 14 son equiprobables.
+          </>
+        }
+      />
 
-      <div className="grid gap-6 lg:grid-cols-[280px_1fr]">
-        <aside className="card h-fit space-y-4 p-6">
+      <div className="grid gap-6 lg:grid-cols-[20rem_1fr] lg:items-start">
+        <Card className="space-y-5 lg:sticky lg:top-24">
           <div>
-            <h2 className="font-display text-base font-semibold text-gray-900">
+            <CardTitle>
               Condiciones
               <InfoTip label="Score de estilo">
                 Ideal = 2 pts, aceptable = 1 pt, fuera = 0. El score es el % del máximo posible (2 pts × condiciones
                 activas). Es un resumen descriptivo del cartón, no una probabilidad de ganar.
               </InfoTip>
-            </h2>
-          </div>
-          <div className="flex flex-col gap-1">
-            {KINO_TIP_DEFS.map((tip) => (
-              <label key={tip.key} className="flex cursor-pointer items-center gap-2 rounded px-1 py-1 text-xs hover:bg-gray-50">
-                <input
-                  type="checkbox"
+            </CardTitle>
+            <div className="mt-2 flex flex-col">
+              {KINO_TIP_DEFS.map((tip) => (
+                <CheckboxRow
+                  key={tip.key}
                   checked={active.includes(tip.key)}
                   onChange={() => toggleTip(tip.key)}
-                  className="h-3.5 w-3.5 accent-kino-red-600"
+                  label={tip.label}
                 />
-                <span className="font-medium text-gray-800">{tip.label}</span>
-              </label>
-            ))}
+              ))}
+            </div>
           </div>
 
-          <div>
-            <label htmlFor="cantidad" className="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">
-              Cartones a comparar ({count})
-            </label>
-            <input
-              id="cantidad"
-              type="number"
-              min={10}
-              max={2000}
-              step={10}
-              value={count}
-              onChange={(e) => setCount(Math.min(2000, Math.max(10, Number(e.target.value) || DEFAULT_COUNT)))}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 font-mono text-sm focus:border-kino-red-600 focus:outline-none focus:ring-2 focus:ring-kino-red-600/30"
-            />
-          </div>
+          <Field label={`Cartones a comparar (${count})`} hint="Entre 10 y 2.000.">
+            {({ controlId, describedBy }) => (
+              <TextInput
+                id={controlId}
+                aria-describedby={describedBy}
+                type="number"
+                inputMode="numeric"
+                min={10}
+                max={2000}
+                step={10}
+                mono
+                value={count}
+                onChange={(e) => setCount(Math.min(2000, Math.max(10, Number(e.target.value) || DEFAULT_COUNT)))}
+              />
+            )}
+          </Field>
 
-          <button className="w-full btn-primary" onClick={() => setRunId((r) => r + 1)}>
+          <Button variant="primary" fullWidth onClick={() => setRunId((r) => r + 1)}>
             Volver a comparar
-          </button>
-        </aside>
+          </Button>
+        </Card>
 
         <div className="space-y-6">
           {candidates.sorted.length === 0 ? (
-            <p className="text-sm text-gray-500">No hay cartones para comparar.</p>
+            <Card>
+              <p className="text-small text-ink-600">No hay cartones para comparar.</p>
+            </Card>
           ) : (
             <>
-              <section className="card p-6">
-                <h2 className="mb-3 font-display text-lg font-semibold text-gray-900">Mejor del lote (estilo)</h2>
+              <Card>
+                <CardTitle>Mejor del lote (estilo)</CardTitle>
                 {best && (
-                  <div className="rounded-lg bg-kino-red-50 p-4">
-                    <p className="font-mono text-lg font-bold text-gray-900">{best.carton.join(" · ")}</p>
-                    <p className="mt-1 text-sm text-gray-600">
-                      Score <strong className="font-mono">{best.score}</strong>/100 · {best.ideal} ideal, {best.aceptable}{" "}
-                      aceptable, {best.fuera} fuera
+                  <div className="mt-3 rounded-md bg-accent-tint p-4">
+                    <p className="tabular font-mono text-h3 font-medium text-ink-900">{best.carton.join(" · ")}</p>
+                    <p className="mt-2 text-small text-ink-600">
+                      Score <strong className="tabular font-mono font-medium text-accent-text-strong">{best.score}</strong>
+                      /100 · {best.ideal} ideal, {best.aceptable} aceptable, {best.fuera} fuera
                     </p>
-                    <div className="mt-3 flex flex-wrap gap-2">
-                      <button
-                        className="btn-primary px-3 py-1.5 text-xs"
+                    <div className="mt-4 flex flex-wrap gap-2">
+                      <Button
+                        variant="primary"
+                        size="sm"
                         onClick={() => {
                           setCarton(best.carton);
                           pushToast("Cartón elegido y guardado", "success");
                         }}
                       >
                         Usar este cartón
-                      </button>
-                      <button
-                        className="btn-secondary px-3 py-1.5 text-xs"
+                      </Button>
+                      <Button
+                        variant="secondary"
+                        size="sm"
                         onClick={() => {
                           void navigator.clipboard.writeText(best.carton.join(" "));
                           pushToast("Cartón copiado al portapapeles", "success");
                         }}
                       >
                         Copiar
-                      </button>
+                      </Button>
                     </div>
                   </div>
                 )}
-                <p className="mt-3 text-xs text-gray-500">
-                  Promedio del lote: <strong className="font-mono">{candidates.avgScore.toFixed(1)}</strong>/100 en{" "}
-                  {countActive(active)} condiciones activas.
+                <p className="mt-3 text-small text-ink-600">
+                  Promedio del lote:{" "}
+                  <strong className="tabular font-mono font-medium text-ink-900">
+                    {candidates.avgScore.toFixed(1)}
+                  </strong>
+                  /100 en {countActive(active)} condiciones activas.
                 </p>
-              </section>
+              </Card>
 
-              <section className="card p-6">
-                <h2 className="mb-3 font-display text-lg font-semibold text-gray-900">Análisis por condición (top 5)</h2>
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className="border-b border-gray-200 text-left text-xs uppercase tracking-wide text-gray-500">
-                        <th className="py-2 pr-4">#</th>
-                        {KINO_TIP_DEFS.filter((t) => active.includes(t.key)).map((t) => (
-                          <th key={t.key} className="py-2 pr-4">
-                            {t.label}
-                          </th>
-                        ))}
-                        <th className="py-2 text-right">Score</th>
-                      </tr>
-                    </thead>
-                    <tbody className="font-mono">
-                      {candidates.top.map((c, i) => {
-                        const evals = evaluateKinoTips(c.carton, active);
-                        return (
-                          <tr key={i} className="border-b border-gray-100">
-                            <td className="py-2 pr-4 text-gray-400">#{i + 1}</td>
-                            {KINO_TIP_DEFS.filter((t) => active.includes(t.key)).map((t) => {
-                              const r = evals.find((e) => e.key === t.key)!;
-                              return (
-                                <td key={t.key} className="py-2 pr-4">
-                                  <span
-                                    title={r.metric}
-                                    className={
-                                      r.status === "ideal"
-                                        ? "text-emerald-600"
-                                        : r.status === "aceptable"
-                                          ? "text-amber-600"
-                                          : "text-red-500"
-                                    }
-                                  >
-                                    {r.metric}
-                                  </span>
-                                </td>
-                              );
-                            })}
-                            <td className="py-2 text-right font-semibold">{c.score}</td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-              </section>
+              <Card>
+                <CardTitle>Análisis por condición (top 5)</CardTitle>
+                <DataTable className="mt-4">
+                  <thead>
+                    <tr>
+                      <Th numeric>#</Th>
+                      {KINO_TIP_DEFS.filter((t) => active.includes(t.key)).map((t) => (
+                        <Th key={t.key}>{t.label}</Th>
+                      ))}
+                      <Th numeric>Score</Th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {candidates.top.map((c, i) => {
+                      const evals = evaluateKinoTips(c.carton, active);
+                      return (
+                        <Tr key={i}>
+                          <Td numeric className="text-ink-600">
+                            #{i + 1}
+                          </Td>
+                          {KINO_TIP_DEFS.filter((t) => active.includes(t.key)).map((t) => {
+                            const r = evals.find((e) => e.key === t.key)!;
+                            return (
+                              // El estado ya no vive solo en el color: glifo + sr-only con el
+                              // nivel (ideal/aceptable/fuera), según design-tokens.md §6.
+                              <Td key={t.key} title={`${r.metric} — ${r.status}`}>
+                                <span className="inline-flex items-center gap-1.5">
+                                  <StatusCell level={r.status} value={r.metric} />
+                                </span>
+                              </Td>
+                            );
+                          })}
+                          <Td numeric className="font-semibold">
+                            {c.score}
+                          </Td>
+                        </Tr>
+                      );
+                    })}
+                  </tbody>
+                </DataTable>
+                <p className="mt-3 text-small text-ink-600">
+                  Cada celda muestra el valor medido del cartón junto a su nivel (ideal, aceptable o fuera). El color
+                  acompaña; el glifo y el texto en pantalla lo dicen explícitamente.
+                </p>
+              </Card>
             </>
           )}
         </div>

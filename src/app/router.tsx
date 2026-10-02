@@ -1,6 +1,7 @@
 import { lazy, Suspense } from "react";
 import { Outlet, createRootRoute, createRoute, createRouter } from "@tanstack/react-router";
 import { RootLayout } from "@/components/layout/RootLayout";
+import { LoadingBlock } from "@/components/ui/Skeleton";
 import { HomePage } from "@/pages/HomePage";
 import { GeneratorPage } from "@/pages/GeneratorPage";
 import { SimulatorPage } from "@/pages/SimulatorPage";
@@ -20,6 +21,19 @@ const BallWeightsPage = lazy(() =>
 const ComparadorPage = lazy(() =>
   import("@/pages/ComparadorPage").then((m) => ({ default: m.ComparadorPage })),
 );
+
+/**
+ * Fallback de ruta: skeleton con la silueta real de la vista, no un "Cargando…"
+ * genérico. El texto de carga va a `role="status"` (LoadingBlock) para que el
+ * usuario con lector de pantalla sepa qué se está montando.
+ */
+function routeFallback(label: string) {
+  return (
+    <div className="mx-auto w-full max-w-tool px-5 py-10 sm:px-6 lg:px-8">
+      <LoadingBlock label={label} />
+    </div>
+  );
+}
 
 export const rootRoute = createRootRoute({
   component: () => (
@@ -51,7 +65,7 @@ export const statsRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/estadisticas",
   component: () => (
-    <Suspense fallback={<p className="p-8 text-sm text-gray-500">Cargando estadísticas…</p>}>
+    <Suspense fallback={routeFallback("Cargando estadísticas")}>
       <StatsPage />
     </Suspense>
   ),
@@ -61,7 +75,7 @@ export const verifierRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/verificador",
   component: () => (
-    <Suspense fallback={<p className="p-8 text-sm text-gray-500">Cargando verificador…</p>}>
+    <Suspense fallback={routeFallback("Cargando verificador")}>
       <VerifierPage />
     </Suspense>
   ),
@@ -71,7 +85,7 @@ export const ballWeightsRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/pesos",
   component: () => (
-    <Suspense fallback={<p className="p-8 text-sm text-gray-500">Cargando pesos…</p>}>
+    <Suspense fallback={routeFallback("Cargando pesos de las bolillas")}>
       <BallWeightsPage />
     </Suspense>
   ),
@@ -81,7 +95,7 @@ export const comparadorRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/comparador",
   component: () => (
-    <Suspense fallback={<p className="p-8 text-sm text-gray-500">Cargando comparador…</p>}>
+    <Suspense fallback={routeFallback("Cargando comparador")}>
       <ComparadorPage />
     </Suspense>
   ),

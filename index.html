@@ -3,8 +3,30 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="Kino Simulator - simulación estadística del Kino: elige 14 de 25, Monte Carlo con semilla, frecuencias y probabilidades." />
-    <meta name="theme-color" content="#E4002B" />
+    <meta
+      name="description"
+      content="Kino Simulator - simulación estadística del Kino: elige 14 de 25, Monte Carlo con semilla, frecuencias y probabilidades."
+    />
+    <meta name="color-scheme" content="light dark" />
+    <meta name="theme-color" content="#FAF9F7" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0C0A09" media="(prefers-color-scheme: dark)" />
+
+    <!--
+      Tipografía del producto (ver /context/design-tokens.md):
+      - Newsreader    → display (titulares, logo). Serif humanista, voz editorial.
+      - Inter         → texto. x-height alta + tnum para las tablas de probabilidades.
+      - IBM Plex Mono → datos (semillas, frecuencias, probabilidades).
+      `display=swap` evita FOIT; los @font-face de fallback con size-adjust en index.css
+      evitan el layout shift mientras descarga. Para producción, auto-hostear los woff2
+      (ver §"Deporte a producción" de design-tokens.md) en lugar de depender del CDN.
+    -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap"
+    />
+
     <title>juegaKino — Simulador del Kino</title>
   </head>
   <body>

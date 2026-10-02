@@ -27,6 +27,7 @@ export {
 export {
   generateBalancedCarton,
   generateCartonByStrategy,
+  iterateAllKinoCartons,
 } from "./generation";
 
 export {
@@ -39,7 +40,7 @@ export {
   KINO_TIP_DEFS,
   kinoTipsMetrics,
   evaluateKinoTips,
-  generateCartonWithKinoTips,
+  matchesIdealKinoTips,
   kinoStyleScore,
   analyzeDrawsAgainstTips,
   countActive,
@@ -50,7 +51,6 @@ export type {
   KinoTipDefinition,
   KinoTipsMetrics,
   KinoTipResult,
-  KinoTipsFilterResult,
   Status,
   TipEmpiricalStats,
 } from "./kinoTips";

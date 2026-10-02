@@ -1,6 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
 import { KinoGrid } from "@/components/kino/KinoGrid";
 import { InfoTip } from "@/components/ui/InfoTip";
+import { PageHeader } from "@/components/ui/PageHeader";
+import { Button } from "@/components/ui/Button";
+import { Card, CardTitle, StatBlock } from "@/components/ui/Card";
+import { CheckboxRow, Field, Note, TextInput } from "@/components/ui/Field";
 import { EXPECTED_MATCHES, MIN_PRIZE_MATCHES, PICK_SIZE, probabilityAtLeast, randomSeed } from "@/domain";
 import { useSimulation } from "@/hooks/useSimulation";
 import { useKinoStore } from "@/stores/kinoStore";
@@ -110,147 +114,180 @@ export function SimulatorPage() {
   };
 
   return (
-    <div className="space-y-6">
-      <header>
-        <h1 className="font-display text-3xl font-bold text-gray-900">Simulador Monte Carlo</h1>
-        <p className="mt-1 text-sm text-gray-600">
-          Corre miles de sorteos en un Web Worker sin bloquear la UI. Si no escribes una semilla a mano, cada{" "}
-          <em>Simular</em> usa una <strong>semilla nueva</strong> (los resultados varían). Para reproducir el mismo
-          sorteo, fija una semilla y úsala siempre.
-        </p>
-      </header>
+    <div className="space-y-8">
+      <PageHeader
+        eyebrow="Simular"
+        title="Simulador Monte Carlo"
+        description={
+          <>
+            Corre miles de sorteos en un Web Worker sin bloquear la interfaz. Si no escribes una semilla a mano, cada{" "}
+            <strong className="font-medium text-ink-900">Simular</strong> usa una semilla nueva. Para reproducir el
+            mismo sorteo, fija una semilla y úsala siempre.
+          </>
+        }
+      />
 
-      <div className="grid gap-6 lg:grid-cols-[280px_1fr]">
-        <aside className="card h-fit space-y-4 p-6">
-          <div>
-            <label htmlFor="seed" className="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">
-              Semilla
-            </label>
-            <div className="flex gap-2">
-              <input
-                id="seed"
-                value={seedInput}
-                onChange={(e) => {
-                  setSeedInput(e.target.value);
-                  setSeedManual(true);
-                }}
-                className="w-full rounded-lg border border-gray-300 px-3 py-2 font-mono text-sm focus:border-kino-red-600 focus:outline-none focus:ring-2 focus:ring-kino-red-600/30"
-              />
-              <button
-                type="button"
-                title="Semilla aleatoria nueva"
-                aria-label="Semilla aleatoria nueva"
-                onClick={rollSeed}
-                className="rounded-lg border border-gray-300 px-3 text-lg hover:bg-gray-50 disabled:opacity-50"
-                disabled={running}
-              >
-                🎲
-              </button>
-            </div>
-            <p className="mt-1 text-[11px] text-gray-400">
-              {seedManual ? "Semilla fijada (reproducible)." : "Semilla automática nueva por simulación."}
-            </p>
-          </div>
-
-          <div>
-            <label htmlFor="draws" className="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">
-              Sorteos (1 a 1.000.000)
-            </label>
-            <input
-              id="draws"
-              inputMode="numeric"
-              value={drawsInput}
-              onChange={(e) => setDrawsInput(e.target.value)}
-              onBlur={applyConfig}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 font-mono text-sm focus:border-kino-red-600 focus:outline-none focus:ring-2 focus:ring-kino-red-600/30"
-            />
-          </div>
-
-          <label className="flex cursor-pointer items-start gap-2 rounded-lg bg-gray-50 p-3 text-xs text-gray-700">
-            <input
-              type="checkbox"
-              checked={useBallWeights}
-              onChange={(e) => setUseBallWeights(e.target.checked)}
-              className="mt-0.5 h-3.5 w-3.5 accent-kino-red-600"
-            />
-            <span>
-              <span className="font-semibold text-gray-800">Usar pesos de bolillas</span>
-              <span className="mt-0.5 block leading-snug text-gray-500">
-                Sorteo ponderado por el peso editado de cada bola (modelo 1/peso). Edítalos en Pesos.
-              </span>
-            </span>
-          </label>
-
-          <button className="w-full btn-primary" onClick={start} disabled={running}>
-            {running ? `Simulando… ${progress ?? 0}%` : "Simular"}
-          </button>
-          {running && (
-            <button className="w-full btn-secondary" onClick={cancel}>
-              Cancelar
-            </button>
-          )}
-
-          <button
-            type="button"
-            className="w-full text-left text-[11px] text-gray-500 hover:text-kino-red-600"
-            onClick={() => {
-              void navigator.clipboard.writeText(shareUrl);
-              pushToast("Enlace reproducible copiado", "success");
-            }}
+      <div className="grid gap-6 lg:grid-cols-[20rem_1fr] lg:items-start">
+        <Card className="space-y-5 lg:sticky lg:top-24">
+          <Field
+            label="Semilla"
+            hint={seedManual ? "Fijada: el resultado es reproducible." : "Automática: cambia en cada simulación."}
           >
-            🔗 Copiar enlace reproducible (semilla {seedInput || config.seed})
-            <InfoTip label="Compartir simulación">
-              Abre el mismo simulador con esta semilla, sorteos y pesos ya cargados. Con la misma semilla el resultado
-              es idéntico.
-            </InfoTip>
-          </button>
+            {({ controlId, describedBy }) => (
+              <div className="flex gap-2">
+                <TextInput
+                  id={controlId}
+                  aria-describedby={describedBy}
+                  mono
+                  value={seedInput}
+                  onChange={(e) => {
+                    setSeedInput(e.target.value);
+                    setSeedManual(true);
+                  }}
+                />
+                <Button
+                  variant="secondary"
+                  onClick={rollSeed}
+                  disabled={running}
+                  aria-label="Semilla aleatoria nueva"
+                  title="Semilla aleatoria nueva"
+                  className="shrink-0"
+                >
+                  <span aria-hidden="true">⤨</span>
+                </Button>
+              </div>
+            )}
+          </Field>
 
-          {carton.length === PICK_SIZE && (
-            <button
-              type="button"
-              className="w-full text-left text-[11px] text-gray-500 hover:text-kino-red-600"
-              onClick={() => {
-                void navigator.clipboard.writeText(carton.join(" "));
-                pushToast("Cartón copiado al portapapeles", "success");
-              }}
+          <Field label="Sorteos" hint="Entre 1 y 1.000.000.">
+            {({ controlId, describedBy }) => (
+              <TextInput
+                id={controlId}
+                aria-describedby={describedBy}
+                mono
+                inputMode="numeric"
+                value={drawsInput}
+                onChange={(e) => setDrawsInput(e.target.value)}
+                onBlur={applyConfig}
+              />
+            )}
+          </Field>
+
+          <div className="rounded-md bg-surface-sunken p-1">
+            <CheckboxRow
+              checked={useBallWeights}
+              onChange={setUseBallWeights}
+              label="Usar pesos de bolillas"
+              hint="Sorteo ponderado por el peso editado de cada bola (modelo 1/peso). Edítalos en Pesos."
+            />
+          </div>
+
+          <div className="space-y-2">
+            {/* Único primary de la vista. */}
+            <Button
+              variant="primary"
+              fullWidth
+              onClick={start}
+              disabled={running}
+              loading={running}
+              loadingLabel={`Simulando… ${progress ?? 0}%`}
             >
-              📋 Copiar cartón ({carton.join(" ")})
-            </button>
-          )}
+              Simular
+            </Button>
+            {running && (
+              <Button variant="secondary" fullWidth onClick={cancel}>
+                Cancelar
+              </Button>
+            )}
+          </div>
 
           {running && progress !== null && (
-            <div className="h-2 w-full overflow-hidden rounded-full bg-gray-200">
-              <div className="h-full bg-kino-red-600 transition-all" style={{ width: `${progress}%` }} />
+            <div
+              role="progressbar"
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-valuenow={progress}
+              aria-label="Progreso de la simulación"
+              className="h-1.5 w-full overflow-hidden rounded-full bg-line-strong"
+            >
+              <div
+                className="h-full rounded-full bg-accent-fill transition-all duration-150 ease-smooth"
+                style={{ width: `${progress}%` }}
+              />
             </div>
           )}
 
-          {error && <p className="rounded-lg bg-red-50 p-3 text-sm text-red-700">Error: {error}</p>}
-        </aside>
+          {error && (
+            <Note tone="danger" title="No se pudo simular">
+              {error}
+            </Note>
+          )}
+
+          <div className="space-y-1 border-t border-line pt-4">
+            <Button
+              variant="ghost"
+              size="sm"
+              fullWidth
+              className="justify-start"
+              onClick={() => {
+                void navigator.clipboard.writeText(shareUrl);
+                pushToast("Enlace reproducible copiado", "success");
+              }}
+            >
+              Copiar enlace reproducible
+              <InfoTip label="Compartir simulación">
+                Abre el mismo simulador con esta semilla (semilla {seedInput || config.seed}), sorteos y pesos ya
+                cargados. Con la misma semilla el resultado es idéntico.
+              </InfoTip>
+            </Button>
+
+            {carton.length === PICK_SIZE && (
+              <Button
+                variant="ghost"
+                size="sm"
+                fullWidth
+                className="justify-start"
+                onClick={() => {
+                  void navigator.clipboard.writeText(carton.join(" "));
+                  pushToast("Cartón copiado al portapapeles", "success");
+                }}
+              >
+                Copiar cartón ({carton.join(" ")})
+              </Button>
+            )}
+          </div>
+        </Card>
 
         <div className="space-y-6">
-          <div className="card p-6">
-            <h2 className="mb-3 font-display text-lg font-semibold text-gray-900">Cartón evaluado</h2>
+          <Card>
+            <CardTitle>Cartón evaluado</CardTitle>
             {carton.length === PICK_SIZE ? (
-              <p className="mb-3 text-sm text-gray-600">
-                Evalúas la frecuencia de aciertos de <strong>{carton.join(", ")}</strong> sobre los sorteos simulados.
+              <p className="mt-2 text-small text-ink-600">
+                Evalúas la frecuencia de aciertos de{" "}
+                <strong className="tabular font-mono font-medium text-ink-900">{carton.join(" ")}</strong> sobre los
+                sorteos simulados.
               </p>
             ) : (
-              <p className="mb-3 text-sm text-amber-700">
-                Selecciona 14 números para ver la frecuencia de aciertos de tu cartón ({14 - carton.length} faltantes).
-              </p>
+              <Note tone="warning" className="mt-2">
+                Selecciona 14 números para ver la frecuencia de aciertos de tu cartón (faltan{" "}
+                {14 - carton.length}).
+              </Note>
             )}
-            <KinoGrid />
-          </div>
+            <div className="mt-4">
+              <KinoGrid />
+            </div>
+          </Card>
 
           {result && !running && (
-            <div className="card p-6">
-              <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-                <h2 className="font-display text-lg font-semibold text-gray-900">
-                  Resultados <span className="font-mono text-sm font-normal text-gray-500">semilla {result.seed}</span>
-                </h2>
-                <button
-                  type="button"
-                  className="btn-secondary px-3 py-1.5 text-xs"
+            <Card>
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <CardTitle>
+                  Resultados{" "}
+                  <span className="tabular font-sans text-small font-normal text-ink-600">semilla {result.seed}</span>
+                </CardTitle>
+                <Button
+                  variant="secondary"
+                  size="sm"
                   onClick={() => {
                     const rows = result.matchHistogram.map((count, k) => [
                       k,
@@ -259,59 +296,66 @@ export function SimulatorPage() {
                     ]);
                     downloadTextFile(
                       `kino-simulacion-seed-${result.seed}.csv`,
-                      toCsv(["Aciertos", "Sorteos", "Frecuencia"],
-                        rows.concat([["—", "Total", ""], ["Sorteos", result.draws, ""], ["Premios (≥10)", result.prizeWins, ""]])),
+                      toCsv(
+                        ["Aciertos", "Sorteos", "Frecuencia"],
+                        rows.concat([
+                          ["—", "Total", ""],
+                          ["Sorteos", result.draws, ""],
+                          ["Premios (≥10)", result.prizeWins, ""],
+                        ]),
+                      ),
                     );
                     pushToast("CSV de la simulación exportado", "success");
                   }}
                 >
                   ⬇ Exportar CSV
-                </button>
+                </Button>
               </div>
 
-              <div className="grid gap-4 sm:grid-cols-3">
-                <div className="rounded-lg bg-gray-50 p-4">
-                  <p className="text-xs font-medium uppercase tracking-wide text-gray-500">Sorteos</p>
-                  <p className="mt-1 font-mono text-xl font-bold text-gray-900">{result.draws.toLocaleString("es-CL")}</p>
-                </div>
-                <div className="rounded-lg bg-gray-50 p-4">
-                  <p className="text-xs font-medium uppercase tracking-wide text-gray-500">
-                    Premios observados (≥{MIN_PRIZE_MATCHES})
-                  </p>
-                  {carton.length === PICK_SIZE ? (
-                    <p className="mt-1 font-mono text-xl font-bold text-emerald-600">
-                      {result.prizeWins.toLocaleString("es-CL")}
-                      <span className="text-xs font-normal text-gray-500">
-                        {" "}({(result.prizeWins / result.draws).toFixed(4)} %)
-                      </span>
-                    </p>
-                  ) : (
-                    <p className="mt-1 text-sm text-gray-400">sin cartón</p>
-                  )}
-                </div>
-                <div className="rounded-lg bg-gray-50 p-4">
-                  <p className="text-xs font-medium uppercase tracking-wide text-gray-500">Promedio de aciertos</p>
-                  {carton.length === PICK_SIZE ? (
-                    <p className="mt-1 font-mono text-xl font-bold text-gray-900">
-                      {(result.matchHistogram.reduce((a, v, i) => a + v * i, 0) / result.draws).toFixed(2)}
-                      <span className="text-xs font-normal text-gray-500"> (teórico {EXPECTED_MATCHES.toFixed(2)})</span>
-                    </p>
-                  ) : (
-                    <p className="mt-1 text-sm text-gray-400">sin cartón</p>
-                  )}
-                </div>
+              <div className="mt-5 grid gap-3 sm:grid-cols-3">
+                <StatBlock label="Sorteos" value={result.draws.toLocaleString("es-CL")} />
+                <StatBlock
+                  label={`Premios observados (≥${MIN_PRIZE_MATCHES})`}
+                  value={
+                    carton.length === PICK_SIZE ? (
+                      <>
+                        {result.prizeWins.toLocaleString("es-CL")}
+                        <span className="text-small font-normal text-ink-600">
+                          {" "}
+                          ({(result.prizeWins / result.draws).toFixed(4)} %)
+                        </span>
+                      </>
+                    ) : (
+                      <span className="font-sans text-small text-ink-600">sin cartón</span>
+                    )
+                  }
+                  tone={carton.length === PICK_SIZE && result.prizeWins > 0 ? "success" : "default"}
+                />
+                <StatBlock
+                  label="Promedio de aciertos"
+                  value={
+                    carton.length === PICK_SIZE ? (
+                      <>
+                        {(result.matchHistogram.reduce((a, v, i) => a + v * i, 0) / result.draws).toFixed(2)}
+                        <span className="text-small font-normal text-ink-600">
+                          {" "}
+                          (teórico {EXPECTED_MATCHES.toFixed(2)})
+                        </span>
+                      </>
+                    ) : (
+                      <span className="font-sans text-small text-ink-600">sin cartón</span>
+                    )
+                  }
+                />
               </div>
 
-              <div className="mt-4 rounded-lg bg-kino-red-50 p-4 text-sm text-kino-red-900">
-                <p className="font-semibold">Lo importante:</p>
-                <p>
-                  La frecuencia observada se acerca al valor teórico (
-                  {((probabilityAtLeast(MIN_PRIZE_MATCHES)) * 100).toFixed(1)} % de premios) cuando aumentas el número
-                  de sorteos. Que unos números salgan más veces <em>no</em> significa que volverán a salir: tu cartón
-                  siempre tiene la misma probabilidad.
-                </p>
-              </div>
-            </div>
+              <Note tone="accent" title="Lo importante" className="mt-5">
+                La frecuencia observada se acerca al valor teórico (
+                {(probabilityAtLeast(MIN_PRIZE_MATCHES) * 100).toFixed(1)} % de premios) cuando aumentas el número de
+                sorteos. Que unos números salgan más veces <em>no</em> significa que volverán a salir: tu cartón siempre
+                tiene la misma probabilidad.
+              </Note>
+            </Card>
           )}
         </div>
       </div>

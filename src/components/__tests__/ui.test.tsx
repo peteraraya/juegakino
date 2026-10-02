@@ -76,9 +76,10 @@ describe("Toasts", () => {
     const user = userEvent.setup();
     render(<Toasts />);
     act(() => useUiStore.getState().pushToast("Cartón copiado", "success"));
-    const toast = await screen.findByText("Cartón copiado");
-    expect(toast).toBeInTheDocument();
-    await user.click(toast);
+    // El mensaje es texto plano (no un botón) y se anuncia por `role="status"`.
+    expect(await screen.findByText("Cartón copiado")).toBeInTheDocument();
+    expect(screen.getByRole("status")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: /Cerrar notificación: Cartón copiado/i }));
     await waitFor(() => expect(screen.queryByText("Cartón copiado")).not.toBeInTheDocument());
   });
 });
