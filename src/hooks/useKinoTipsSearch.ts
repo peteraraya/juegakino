@@ -1,11 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { KinoTipCondition } from "@/domain";
+import { randomSeed } from "@/domain";
 import type { KinoTipsSearchMessage, KinoTipsSearchRequest } from "@/workers/kinoTipsSearch.worker";
 import KinoTipsSearchWorker from "@/workers/kinoTipsSearch.worker?worker";
 
 export interface KinoTipsSearchResult {
   carton: number[] | null;
   checked: number;
+  onlyCurrentCarton: boolean;
 }
 
 export function useKinoTipsSearch() {
@@ -29,7 +31,11 @@ export function useKinoTipsSearch() {
         setChecked(message.checked);
         setTotal(message.total);
       } else if (message.type === "result") {
-        setResult({ carton: message.carton, checked: message.checked });
+        setResult({
+          carton: message.carton,
+          checked: message.checked,
+          onlyCurrentCarton: message.onlyCurrentCarton,
+        });
         setRunning(false);
       } else if (message.type === "cancelled") {
         setRunning(false);
@@ -50,7 +56,7 @@ export function useKinoTipsSearch() {
     };
   }, []);
 
-  const search = useCallback((conditions: KinoTipCondition[]) => {
+  const search = useCallback((conditions: KinoTipCondition[], currentCarton: number[]) => {
     if (conditions.length === 0) return;
     const requestId = requestIdRef.current + 1;
     requestIdRef.current = requestId;
@@ -59,7 +65,13 @@ export function useKinoTipsSearch() {
     setTotal(0);
     setResult(null);
     setError(null);
-    const request: KinoTipsSearchRequest = { type: "search", requestId, conditions };
+    const request: KinoTipsSearchRequest = {
+      type: "search",
+      requestId,
+      conditions,
+      seed: randomSeed(),
+      currentCarton,
+    };
     workerRef.current?.postMessage(request);
   }, []);
 

@@ -2,6 +2,7 @@ import { render, screen, fireEvent, waitFor, act } from "@testing-library/react"
 import userEvent from "@testing-library/user-event";
 import { RouterProvider } from "@tanstack/react-router";
 import { afterEach, describe, expect, it } from "vitest";
+import { Button } from "@/components/ui/Button";
 import { ComparadorPage } from "@/pages/ComparadorPage";
 import { Toasts } from "@/components/ui/Toasts";
 import { InfoTip } from "@/components/ui/InfoTip";
@@ -11,6 +12,20 @@ import { router } from "@/app/router";
 afterEach(() => {
   window.localStorage.clear();
   useUiStore.setState({ toasts: [] });
+});
+
+describe("Button", () => {
+  it("muestra la etiqueta de carga solo mientras está cargando", () => {
+    const { rerender } = render(<Button loadingLabel="Buscando cartón">Generar con condiciones</Button>);
+    expect(screen.getByRole("button", { name: "Generar con condiciones" })).toBeInTheDocument();
+
+    rerender(
+      <Button loading loadingLabel="Buscando cartón">
+        Generar con condiciones
+      </Button>,
+    );
+    expect(screen.getByRole("button", { name: "Buscando cartón" })).toBeDisabled();
+  });
 });
 
 describe("ComparadorPage", () => {

@@ -9,14 +9,14 @@ test('flujo generador: generar cartón, ver toasts y limpiar', async ({ page }) 
   const genBtn = page.getByRole('button', { name: 'Generar cartón' })
   await expect(genBtn).toBeVisible()
   await genBtn.click()
-  await expect(page.getByText(/Cartón generado \(semilla \d+\)/)).toBeVisible()
+  await expect(page.getByText(/cartón generado \(semilla \d+\)/i)).toBeVisible()
   const clean = page.getByRole('button', { name: /Limpiar/ })
   await expect(clean).toBeEnabled()
   await clean.click()
   await expect(clean).toBeDisabled()
 })
 
-test('generador con condiciones: aplicar 1 condición genera y avisa', async ({ page }) => {
+test('generador con condiciones: aplicar 1 condición genera un cartón', async ({ page }) => {
   await page.goto('/generador')
   const zeroBtn = page.getByRole('button', { name: /Generar con 0 cond/i })
   await expect(zeroBtn).toBeVisible()
@@ -25,5 +25,5 @@ test('generador con condiciones: aplicar 1 condición genera y avisa', async ({ 
   const oneBtn = page.getByRole('button', { name: /Generar con 1 cond/i })
   await expect(oneBtn).toBeEnabled()
   await oneBtn.click()
-  await expect(page.getByText(/Cartón con condiciones generado/)).toBeVisible({ timeout: 15_000 })
+  await expect(page.getByText(/Cartón ideal encontrado/)).toBeVisible({ timeout: 15_000 })
 })

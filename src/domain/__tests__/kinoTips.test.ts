@@ -57,6 +57,13 @@ describe("búsqueda de cartones ideales", () => {
     expect(records.next().value).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 15]);
   });
 
+  it("puede recorrer las combinaciones desde un cartón distinto y continúa al inicio", () => {
+    const last = Array.from({ length: 14 }, (_, index) => index + 12);
+    const records = iterateAllKinoCartons(last);
+    expect(records.next().value).toEqual(last);
+    expect(records.next().value).toEqual(Array.from({ length: 14 }, (_, index) => index + 1));
+  });
+
   it("encuentra un cartón donde todas las condiciones están en ideal", () => {
     let candidate: number[] | undefined;
     for (const record of iterateAllKinoCartons()) {

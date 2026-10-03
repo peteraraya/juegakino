@@ -90,7 +90,7 @@ export function Button({
       {...rest}
     >
       {loading && <Spinner />}
-      <span className={loading ? "opacity-70" : undefined}>{loadingLabel ?? children}</span>
+      <span className={loading ? "opacity-70" : undefined}>{loading ? (loadingLabel ?? children) : children}</span>
     </button>
   );
 }

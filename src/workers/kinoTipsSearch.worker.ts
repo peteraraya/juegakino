@@ -1,13 +1,19 @@
-import { iterateAllKinoCartons, matchesIdealKinoTips, TOTAL_COMBINATIONS } from "@/domain";
+import { generateCarton, iterateAllKinoCartons, matchesIdealKinoTips, TOTAL_COMBINATIONS } from "@/domain";
 import type { KinoTipCondition } from "@/domain";
 
 export type KinoTipsSearchRequest =
-  | { type: "search"; requestId: number; conditions: KinoTipCondition[] }
+  | {
+      type: "search";
+      requestId: number;
+      conditions: KinoTipCondition[];
+      seed: number;
+      currentCarton: number[];
+    }
   | { type: "cancel"; requestId: number };
 
 export type KinoTipsSearchMessage =
   | { type: "progress"; requestId: number; checked: number; total: number }
-  | { type: "result"; requestId: number; carton: number[] | null; checked: number }
+  | { type: "result"; requestId: number; carton: number[] | null; checked: number; onlyCurrentCarton: boolean }
   | { type: "cancelled"; requestId: number }
   | { type: "error"; requestId: number; message: string };
 
@@ -26,13 +32,20 @@ ctx.addEventListener("message", (event: MessageEvent<KinoTipsSearchRequest>) => 
   }
 
   activeRequestId = request.requestId;
-  void search(request.requestId, request.conditions);
+  void search(request.requestId, request.conditions, request.seed, request.currentCarton);
 });
 
-async function search(requestId: number, conditions: KinoTipCondition[]): Promise<void> {
+async function search(
+  requestId: number,
+  conditions: KinoTipCondition[],
+  seed: number,
+  currentCarton: number[],
+): Promise<void> {
   try {
-    const records = iterateAllKinoCartons();
+    const records = iterateAllKinoCartons(generateCarton(seed));
+    const sortedCurrentCarton = [...currentCarton].sort((a, b) => a - b);
     let checked = 0;
+    let onlyCurrentCarton: number[] | null = null;
 
     while (activeRequestId === requestId) {
       for (let index = 0; index < CHUNK_SIZE; index++) {
@@ -40,14 +53,34 @@ async function search(requestId: number, conditions: KinoTipCondition[]): Promis
         const next = records.next();
         if (next.done) {
           activeRequestId = null;
-          ctx.postMessage({ type: "result", requestId, carton: null, checked } satisfies KinoTipsSearchMessage);
+          ctx.postMessage({
+            type: "result",
+            requestId,
+            carton: onlyCurrentCarton,
+            checked,
+            onlyCurrentCarton: onlyCurrentCarton !== null,
+          } satisfies KinoTipsSearchMessage);
           return;
         }
 
         checked++;
         if (matchesIdealKinoTips(next.value, conditions)) {
+          if (
+            next.value.length === sortedCurrentCarton.length &&
+            next.value.every((number, position) => number === sortedCurrentCarton[position])
+          ) {
+            onlyCurrentCarton = next.value;
+            continue;
+          }
+
           activeRequestId = null;
-          ctx.postMessage({ type: "result", requestId, carton: next.value, checked } satisfies KinoTipsSearchMessage);
+          ctx.postMessage({
+            type: "result",
+            requestId,
+            carton: next.value,
+            checked,
+            onlyCurrentCarton: false,
+          } satisfies KinoTipsSearchMessage);
           return;
         }
       }

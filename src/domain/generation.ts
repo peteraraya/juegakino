@@ -1,23 +1,32 @@
 import { createPrng } from "./prng";
 import { KINO_SIZE, PICK_SIZE } from "./probabilities";
+import { CartonSchema } from "./schemas";
 import type { GenerationStrategy } from "./schemas";
 import { drawNumbers } from "./simulation";
 
 /** Recorre el espacio completo de cartones sin materializarlo en memoria. */
-export function* iterateAllKinoCartons(): Generator<number[]> {
-  const carton = Array.from({ length: PICK_SIZE }, (_, index) => index + 1);
+export function* iterateAllKinoCartons(startAt?: number[]): Generator<number[]> {
+  if (startAt) CartonSchema.parse(startAt);
+  const carton = startAt
+    ? [...startAt].sort((a, b) => a - b)
+    : Array.from({ length: PICK_SIZE }, (_, index) => index + 1);
+  const start = [...carton];
 
   while (true) {
     yield [...carton];
 
     let index = PICK_SIZE - 1;
     while (index >= 0 && carton[index] === KINO_SIZE - PICK_SIZE + index + 1) index--;
-    if (index < 0) return;
-
-    carton[index]++;
-    for (let next = index + 1; next < PICK_SIZE; next++) {
-      carton[next] = carton[next - 1] + 1;
+    if (index < 0) {
+      for (let next = 0; next < PICK_SIZE; next++) carton[next] = next + 1;
+    } else {
+      carton[index]++;
+      for (let next = index + 1; next < PICK_SIZE; next++) {
+        carton[next] = carton[next - 1] + 1;
+      }
     }
+
+    if (carton.every((number, position) => number === start[position])) return;
   }
 }
 

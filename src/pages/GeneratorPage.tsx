@@ -219,7 +219,12 @@ export function GeneratorPage() {
     if (!tipsResult) return;
     if (tipsResult.carton) {
       setCarton(tipsResult.carton);
-      pushToast(`Cartón ideal encontrado tras ${tipsResult.checked.toLocaleString("es-CL")} combinaciones`, "success");
+      pushToast(
+        tipsResult.onlyCurrentCarton
+          ? "No hay otro cartón distinto que cumpla estas condiciones"
+          : `Cartón ideal encontrado tras ${tipsResult.checked.toLocaleString("es-CL")} combinaciones`,
+        tipsResult.onlyCurrentCarton ? "info" : "success",
+      );
     } else {
       pushToast("No existe un cartón que cumpla todos los parámetros ideales", "error");
     }
@@ -267,7 +272,7 @@ export function GeneratorPage() {
 
   const generateWithTips = () => {
     if (tipsActive.length === 0) return;
-    searchTips(tipsActive);
+    searchTips(tipsActive, cartón);
   };
 
 
