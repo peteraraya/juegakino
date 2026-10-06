@@ -39,7 +39,7 @@ export function KinoGrid() {
   const complete = remaining === 0;
 
   return (
-    <div className="mx-auto max-w-xs">
+    <div className="mx-auto w-full max-w-[420px] sm:max-w-[460px] lg:max-w-[520px]">
       {/* Estado del cartón. La lectura de "cuánto me falta" tiene que ser de un
           vistazo: antes eran dos palabras en los extremos opuestos de una card
           ancha, sin ninguna señal de proporción. El track de progreso reutiliza el
@@ -89,7 +89,7 @@ export function KinoGrid() {
             ? `Bolillas del 1 al 25. Cartón completo con ${PICK_SIZE} números.`
             : `Bolillas del 1 al 25. ${carton.length} de ${PICK_SIZE} números marcados.`
         }
-        className="grid grid-cols-[repeat(5,auto)] justify-center gap-2 sm:gap-2.5"
+        className="grid grid-cols-[repeat(5,auto)] justify-center gap-2 sm:gap-3 md:gap-2.5 lg:gap-3"
       >
         {Array.from({ length: 25 }, (_, i) => i + 1).map((n) => {
           const selected = carton.includes(n);
@@ -109,7 +109,7 @@ export function KinoGrid() {
               className={[
                 "flex items-center justify-center rounded-full leading-none",
                 "font-sans font-semibold",
-                "h-11 w-11 text-body sm:h-12 sm:w-12 sm:text-h3 lg:h-14 lg:w-14",
+                "h-11 w-11 text-body sm:h-12 sm:w-12 sm:text-h3 md:h-13 md:w-13 lg:h-14 lg:w-14 xl:h-16 xl:w-16 xl:text-[1.25rem]",
                 "transition-[background-color,border-color,color,transform] duration-150 ease-smooth",
                 // El offset del anillo lleva el color de la superficie que lo rodea
                 // (una Card es `surface`, no `paper`): con `ring-offset-paper` el
